@@ -100,11 +100,12 @@ func AuthCheck(c *gin.Context) {
 	keySet := jwk.NewSet()
 	keySet.Add(pubKey)
 
-	_, err = jwt.Parse([]byte(c.GetHeader("Authorization")[7:]), jwt.WithKeySet(keySet))
+	token, err := jwt.Parse([]byte(c.GetHeader("Authorization")[7:]), jwt.WithKeySet(keySet))
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
+	c.Set("claims", token.PrivateClaims())
 	c.Next()
 	return
 }

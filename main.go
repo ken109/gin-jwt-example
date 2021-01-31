@@ -19,7 +19,12 @@ func main() {
 	auth := r.Group("/api")
 	auth.Use(util.AuthCheck)
 	auth.GET("/hello", func(c *gin.Context) {
-		c.JSON(http.StatusOK, "Hello World")
+		claims, ok := c.Get("claims")
+		if ok {
+			c.JSON(http.StatusOK, claims)
+		} else {
+			c.JSON(http.StatusOK, "Hello World")
+		}
 	})
 
 	if err := r.Run(":8080"); err != nil {
