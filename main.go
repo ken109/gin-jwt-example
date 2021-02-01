@@ -2,8 +2,8 @@ package main
 
 import (
 	"gin-jwt/controller"
-	"gin-jwt/util"
 	"github.com/gin-gonic/gin"
+	"github.com/ken109/gin-jwt"
 	"io/ioutil"
 	"net/http"
 )
@@ -14,7 +14,8 @@ func main() {
 		panic(err)
 	}
 
-	if err := util.SetUp(pemBytes, util.Option{}); err != nil {
+	// セットアップ
+	if err := jwt.SetUp(pemBytes, jwt.Option{}); err != nil {
 		panic(err)
 	}
 
@@ -23,7 +24,10 @@ func main() {
 	r.POST("/login", controller.Login)
 
 	auth := r.Group("/api")
-	auth.Use(util.Verify)
+
+	// 認証チェックしたいところでUseする
+	auth.Use(jwt.Verify)
+
 	auth.GET("/hello", func(c *gin.Context) {
 		claims, ok := c.Get("claims")
 		if ok {

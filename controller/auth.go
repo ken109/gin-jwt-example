@@ -2,8 +2,8 @@ package controller
 
 import (
 	"gin-jwt/model"
-	"gin-jwt/util"
 	"github.com/gin-gonic/gin"
+	"github.com/ken109/gin-jwt"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 )
@@ -19,7 +19,8 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusForbidden, map[string]string{"error": "login failed"})
 		return
 	} else {
-		token, err := util.GetToken(map[string]interface{}{
+		// Tokenを吐き出す
+		token, err := jwt.GetToken(map[string]interface{}{
 			"id":    user.ID,
 			"admin": true,
 		})
