@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"gin-jwt/model"
+	"gin-jwt-example/model"
 	"github.com/gin-gonic/gin"
 	"github.com/ken109/gin-jwt"
 	"golang.org/x/crypto/bcrypt"

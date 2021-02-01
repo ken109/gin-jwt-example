@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gin-jwt/controller"
+	"gin-jwt-example/controller"
 	"github.com/gin-gonic/gin"
 	"github.com/ken109/gin-jwt"
 	"io/ioutil"
