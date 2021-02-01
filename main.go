@@ -4,11 +4,17 @@ import (
 	"gin-jwt/controller"
 	"gin-jwt/util"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
 )
 
 func main() {
-	if err := util.SetRsaPrivateKey("private.key"); err != nil {
+	pemBytes, err := ioutil.ReadFile("private.key")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := util.SetUp(pemBytes, util.Option{}); err != nil {
 		panic(err)
 	}
 
@@ -17,7 +23,7 @@ func main() {
 	r.POST("/login", controller.Login)
 
 	auth := r.Group("/api")
-	auth.Use(util.AuthCheck)
+	auth.Use(util.Verify)
 	auth.GET("/hello", func(c *gin.Context) {
 		claims, ok := c.Get("claims")
 		if ok {

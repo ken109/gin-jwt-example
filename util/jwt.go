@@ -10,20 +10,31 @@ import (
 	"github.com/lestrrat-go/jwx/jwa"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
 
-var privateKey *rsa.PrivateKey
+type Option struct {
+	privateKey *rsa.PrivateKey
+	Issuer     string
+	Subject    string
+	KeyId      string
+	Expiration time.Duration
+}
 
-func SetRsaPrivateKey(pemFile string) error {
-	bytes, err := ioutil.ReadFile(pemFile)
-	if err != nil {
+var options Option
+
+func SetUp(pemBytes []byte, option Option) error {
+	setOption(option)
+	if err := setRsaPrivateKey(pemBytes); err != nil {
 		return err
 	}
+	return nil
+}
 
-	block, _ := pem.Decode(bytes)
+func setRsaPrivateKey(pemBytes []byte) error {
+	var err error
+	block, _ := pem.Decode(pemBytes)
 	if block == nil {
 		return errors.New("invalid private key data")
 	}
@@ -54,8 +65,24 @@ func SetRsaPrivateKey(pemFile string) error {
 		return err
 	}
 
-	privateKey = key
+	options.privateKey = key
 	return nil
+}
+
+func setOption(option Option) {
+	if option.Issuer == "" {
+		option.Issuer = "test@example.com"
+	}
+	if option.Subject == "" {
+		option.Subject = "test@example.com"
+	}
+	if option.KeyId == "" {
+		option.KeyId = "example"
+	}
+	if option.Expiration == 0 {
+		option.Expiration = time.Hour * 1
+	}
+	options = option
 }
 
 func GetToken(claims map[string]interface{}) ([]byte, error) {
@@ -63,9 +90,9 @@ func GetToken(claims map[string]interface{}) ([]byte, error) {
 
 	t := jwt.New()
 
-	_ = t.Set(jwt.IssuerKey, "test@example.com")
-	_ = t.Set(jwt.SubjectKey, "test@example.com")
-	_ = t.Set(jwt.ExpirationKey, time.Now().Add(time.Hour*1).Unix())
+	_ = t.Set(jwt.IssuerKey, options.Issuer)
+	_ = t.Set(jwt.SubjectKey, options.Subject)
+	_ = t.Set(jwt.ExpirationKey, time.Now().Add(options.Expiration).Unix())
 	_ = t.Set(jwt.IssuedAtKey, time.Now().Unix())
 
 	for k, v := range claims {
@@ -75,11 +102,11 @@ func GetToken(claims map[string]interface{}) ([]byte, error) {
 		}
 	}
 
-	realKey, err := jwk.New(privateKey)
+	realKey, err := jwk.New(options.privateKey)
 	if err != nil {
 		return nil, err
 	}
-	_ = realKey.Set(jwk.KeyIDKey, `example`)
+	_ = realKey.Set(jwk.KeyIDKey, options.KeyId)
 
 	signed, err := jwt.Sign(t, jwa.RS256, realKey)
 	if err != nil {
@@ -88,14 +115,15 @@ func GetToken(claims map[string]interface{}) ([]byte, error) {
 
 	return signed, nil
 }
-func AuthCheck(c *gin.Context) {
-	pubKey, err := jwk.New(privateKey.PublicKey)
+
+func Verify(c *gin.Context) {
+	pubKey, err := jwk.New(options.privateKey.PublicKey)
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
 		return
 	}
 
-	_ = pubKey.Set(jwk.KeyIDKey, "example")
+	_ = pubKey.Set(jwk.KeyIDKey, options.KeyId)
 
 	keySet := jwk.NewSet()
 	keySet.Add(pubKey)
