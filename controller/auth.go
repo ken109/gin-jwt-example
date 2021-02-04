@@ -20,7 +20,7 @@ func Login(c *gin.Context) {
 		return
 	} else {
 		// Tokenを吐き出す
-		token, err := jwt.GetToken(map[string]interface{}{
+		token, err := jwt.GetToken(jwt.Claims{
 			"id":    user.ID,
 			"admin": true,
 		})
@@ -28,6 +28,6 @@ func Login(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed"})
 			return
 		}
-		c.JSON(http.StatusOK, map[string]interface{}{"token": string(token)})
+		c.JSON(http.StatusOK, jwt.Claims{"token": string(token)})
 	}
 }
